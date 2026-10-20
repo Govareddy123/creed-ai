@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CredReview AI</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--ink:#172033;--muted:#6d788b;--line:#dfe5ef;--blue:#315efb;--green:#0a8757;--amber:#a65a00;--red:#c62d3a}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}.top{height:68px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;padding:0 28px;font-weight:850}.top span{color:var(--blue)}main{max-width:1050px;margin:auto;padding:30px 18px 60px}.eyebrow{color:var(--blue);font-size:12px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}.title{font-size:30px;margin:7px 0}.sub{color:var(--muted);margin:0 0 24px;font-size:14px}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 8px 25px #1522380a;margin-bottom:18px}.head{padding:17px 19px;border-bottom:1px solid var(--line);font-weight:850}.body{padding:19px}.drop{border:2px dashed #aab5c8;border-radius:14px;padding:38px 15px;text-align:center;background:#fbfcff;cursor:pointer}.drop.drag{border-color:var(--blue);background:#eef2ff}.drop strong{display:block;margin:8px 0}.link{color:var(--blue);font-weight:850}.input{display:none}.files{margin-top:12px;display:grid;gap:8px}.file{padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;display:flex;justify-content:space-between}.checkgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:9px}.check{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;gap:10px;align-items:flex-start}.check input{accent-color:var(--blue);width:17px;height:17px}.check b{font-size:13px}.check small{display:block;color:var(--muted);margin-top:3px;line-height:1.35}.actions{display:flex;justify-content:flex-end;gap:9px}.btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:11px 15px;font-weight:850;cursor:pointer}.primary{background:var(--blue);color:#fff;border-color:var(--blue)}.btn:disabled{opacity:.5;cursor:not-allowed}.status{display:none;padding:15px;border:1px solid #cad5ef;background:#f6f8ff;border-radius:12px;margin-top:14px}.status.show{display:block}.bar{height:7px;background:#e7ebf3;border-radius:20px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;width:0;background:var(--blue);transition:width .4s}.error{display:none;background:#fff0f1;border:1px solid #f0c4c8;color:#8f1f2a;padding:13px;border-radius:11px;margin-top:14px}.error.show{display:block}.result{display:none}.result.show{display:block}.overall{padding:15px;border-bottom:1px solid var(--line)}.overall strong{font-size:18px}.meta{color:var(--muted);font-size:12px;margin-top:5px}.row{display:grid;grid-template-columns:1fr 100px 2fr;gap:12px;padding:14px;border-bottom:1px solid var(--line);font-size:13px}.row:last-child{border-bottom:0}.badge{font-weight:900}.PASS{color:var(--green)}.WARN{color:var(--amber)}.FAIL{color:var(--red)}.NEEDS_DATA,.NOT_APPLICABLE{color:#596579}.evidence{color:var(--muted);line-height:1.5}.ev{margin-top:7px;padding:8px 10px;background:#f7f9fc;border-radius:8px;font-size:12px}.footer{color:#8a94a5;text-align:center;font-size:11px;line-height:1.5;margin-top:22px}@media(max-width:700px){main{padding:22px 12px 45px}.title{font-size:25px}.checkgrid{grid-template-columns:1fr}.row{grid-template-columns:1fr 85px}.evidence{grid-column:1/-1}.top{padding:0 17px}}
+</style>
+</head>
+<body>
+<header class="top">CredReview <span>AI</span></header>
+<main>
+<div class="eyebrow">Credentialing packet review</div>
+<h1 class="title">Automatic packet review</h1>
+<p class="sub">Upload the packet. The backend first determines whether it is actually a credentialing packet, then runs the selected evidence-based checks with an LLM.</p>
+
+<section class="card">
+<div class="head">1. Upload credentialing packet</div>
+<div class="body">
+<label id="drop" class="drop">
+<div style="font-size:32px">↑</div>
+<strong>Drop PDF or image files here</strong>
+<span class="link">or choose files</span>
+<div style="color:var(--muted);font-size:12px;margin-top:7px">Multiple documents are supported. Do not upload unrelated personal files.</div>
+<input id="files" class="input" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.tif,.tiff" multiple>
+</label>
+<div id="filesList" class="files"></div>
+</div>
+</section>
+
+<section class="card">
+<div class="head">2. Review checklist</div>
+<div class="body">
+<div id="checks" class="checkgrid"></div>
+<div class="actions" style="margin-top:16px">
+<button class="btn" id="all">Select all</button>
+<button class="btn" id="none">Clear</button>
+</div>
+</div>
+</section>
+
+<section class="card">
+<div class="body">
+<div class="actions">
+<button class="btn primary" id="review" disabled>Start Automatic Review</button>
+</div>
+<div id="error" class="error"></div>
+<div id="status" class="status">
+<strong id="statusTitle">Reviewing…</strong>
+<div id="statusMsg" class="meta">Uploading files securely for analysis.</div>
+<div class="bar"><i id="bar"></i></div>
+</div>
+</div>
+</section>
+
+<section id="result" class="card result">
+<div class="overall">
+<strong id="overall">Review result</strong>
+<div id="overallSummary" class="meta"></div>
+<div id="provider" class="meta"></div>
+</div>
+<div id="rows"></div>
+</section>
+
+<div class="footer">Prototype architecture: browser → secure backend → OpenAI Responses API → structured credentialing review. The LLM is an assistant to a human credentialing reviewer and must not be treated as independent external verification.</div>
+</main>
+<script>
+const CHECKS=[
+["CAQH","CAQH presence and provider consistency"],["NPI","NPI evidence and identity consistency"],["LICENSE","License status, dates and identity"],["BOARDCERT","Board certification evidence"],["PLI","Professional liability evidence"],["WORK HISTORY","Chronology, gaps and overlaps"],["NPDB","NPDB report/evidence"],["DOCUMENTS","Supporting document completeness"],["PROVIDER TYPE","Provider type/specialty consistency"],["ALIAS NAMES","Cross-document provider-name comparison"],["START DATE","Case initiation/start date"],["COMPLETION DATE","Packet-created/completion date"]
+];
+const checks=document.getElementById("checks"), files=document.getElementById("files"), drop=document.getElementById("drop"), list=document.getElementById("filesList"), review=document.getElementById("review");
+CHECKS.forEach(([k,d])=>{const l=document.createElement("label");l.className="check";l.innerHTML=`<input type="checkbox" value="${k}" checked><span><b>${k}</b><small>${d}</small></span>`;checks.appendChild(l)});
+function selected(){return [...checks.querySelectorAll("input:checked")].map(x=>x.value)}
+function renderFiles(){list.innerHTML=[...files.files].map(f=>`<div class="file"><span>${escapeHtml(f.name)}</span><span>${Math.round(f.size/1024)} KB</span></div>`).join("");review.disabled=!files.files.length||!selected().length}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+files.addEventListener("change",renderFiles);
+["dragenter","dragover"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.add("drag")}));
+["dragleave","drop"].forEach(e=>drop.addEventListener(e,ev=>{ev.preventDefault();drop.classList.remove("drag")}));
+drop.addEventListener("drop",ev=>{files.files=ev.dataTransfer.files;renderFiles()});
+document.getElementById("all").onclick=()=>{checks.querySelectorAll("input").forEach(x=>x.checked=true);renderFiles()};
+document.getElementById("none").onclick=()=>{checks.querySelectorAll("input").forEach(x=>x.checked=false);renderFiles()};
+checks.addEventListener("change",renderFiles);
+
+function setStatus(title,msg,pct){document.getElementById("status").classList.add("show");document.getElementById("statusTitle").textContent=title;document.getElementById("statusMsg").textContent=msg;document.getElementById("bar").style.width=pct+"%"}
+
+review.onclick=async()=>{
+ if(!files.files.length||!selected().length)return;
+ const fd=new FormData();
+ [...files.files].forEach(f=>fd.append("packet",f));
+ fd.append("checklist",JSON.stringify(selected()));
+ fd.append("metadata",JSON.stringify({}));
+ document.getElementById("error").classList.remove("show");
+ document.getElementById("result").classList.remove("show");
+ review.disabled=true;
+ setStatus("Validating packet type","The AI is first checking whether the upload is actually a credentialing packet. Unrelated PDFs should be rejected.",15);
+ try{
+   setStatus("Uploading securely","Sending the selected packet documents to the review backend.",28);
+   const r=await fetch("/api/review",{method:"POST",body:fd});
+   const data=await r.json();
+   if(!r.ok)throw new Error(data.error||"Review failed");
+   setStatus("Review completed","Evidence-based checklist results returned.",100);
+   renderResult(data.result);
+ }catch(e){
+   document.getElementById("error").textContent=e.message;
+   document.getElementById("error").classList.add("show");
+   setStatus("Review stopped","No review result was produced.",100);
+ }finally{review.disabled=!files.files.length||!selected().length}
+};
+
+function renderResult(r){
+ document.getElementById("result").classList.add("show");
+ document.getElementById("overall").textContent=`Overall: ${r.overall_status}`;
+ document.getElementById("overallSummary").textContent=r.overall_summary||"";
+ document.getElementById("provider").textContent=`Packet: ${r.packet_type} · Confidence: ${Math.round((r.packet_confidence||0)*100)}% · Provider: ${r.provider_name||"Not identified"}${r.provider_type?` · Type: ${r.provider_type}`:""}`;
+ const rows=document.getElementById("rows");
+ rows.innerHTML=(r.findings||[]).map(f=>{
+   const ev=(f.evidence||[]).map(e=>`<div class="ev"><b>${escapeHtml(e.filename)}</b> · page ${escapeHtml(e.page)}<br>${escapeHtml(e.quote_or_fact)}</div>`).join("");
+   return `<div class="row"><div><b>${escapeHtml(f.checklist_item)}</b><div class="meta">${escapeHtml(f.summary)}</div></div><div class="badge ${f.status}">${f.status}</div><div class="evidence">${ev||"No evidence supplied."}<div style="margin-top:7px"><b>Action:</b> ${escapeHtml(f.action||"")}</div></div></div>`;
+ }).join("");
+}
+</script>
+</body>
+</html>
